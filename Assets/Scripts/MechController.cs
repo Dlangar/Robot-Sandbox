@@ -25,18 +25,23 @@ public class MechController : NetworkBehaviour
 
 	Rigidbody m_Rigidbody;
 	Animator m_Animator;
-	bool m_IsGrounded;
+   AudioSource m_EngineSound;
+   AudioSource m_FootstepSound;
+
+   [SyncVar]
+   float m_ForwardAmount;
+
+   bool m_IsGrounded;
 	float m_OrigGroundCheckDistance;
 	const float k_Half = 0.5f;
 	float m_TurnAmount;
-	float m_ForwardAmount;
 	Vector3 m_GroundNormal;
 	float m_CapsuleHeight;
 	Vector3 m_CapsuleCenter;
 	CapsuleCollider m_Capsule;
 	bool m_Crouching;
-    Vector3 m_CurrentMove;
-    float m_AnimWalkSpeed;
+   Vector3 m_CurrentMove;
+   float m_AnimWalkSpeed;
 
 
 	void Start()
@@ -44,12 +49,32 @@ public class MechController : NetworkBehaviour
 		m_Animator = GetComponent<Animator>();
 		m_Rigidbody = GetComponent<Rigidbody>();
 		m_Capsule = GetComponent<CapsuleCollider>();
+      AudioSource[] audioList = GetComponents<AudioSource>();
+      if (audioList != null && audioList.Length == 2)
+      {
+         m_EngineSound = audioList[0];
+         m_FootstepSound = audioList[1];
+      }
+
 		m_CapsuleHeight = m_Capsule.height;
 		m_CapsuleCenter = m_Capsule.center;
 
 		m_Rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
 		m_OrigGroundCheckDistance = m_GroundCheckDistance;
 	}
+
+   /// <summary>
+   /// Update
+   /// Make sure the pitch is updated for both local and non local clients by
+   /// placing it here
+   /// </summary>
+   void Update()
+   {
+      // Update the Engine Sound based on our object's velocity
+      Vector3 localVel = m_Rigidbody.velocity;
+      float speed = m_Animator.GetFloat("Forward");
+      m_EngineSound.pitch = Mathf.Max(0.05f, Mathf.Abs(speed));
+   }
 
    public override void OnStartLocalPlayer()
    {
@@ -72,6 +97,9 @@ public class MechController : NetworkBehaviour
    /// based on the move vector passed in, and updates the animator. User Input is only
    /// taken for local players.  However, this could eventually also be used
    /// by an AI system.
+   /// IMPORTANT - This function is called from UserInput.Update, which only
+   /// gets called on the local client. So EVERYTHING in this function
+   /// happens ONLY on the local client.
    /// </summary>
    /// <param name="move"></param>
    /// <param name="crouch"></param>
@@ -118,6 +146,7 @@ public class MechController : NetworkBehaviour
 
 		// send input and other state parameters to the animator
 		UpdateAnimator(move);
+
 	}
 
 
@@ -277,4 +306,26 @@ public class MechController : NetworkBehaviour
 			m_Animator.applyRootMotion = false;
 		}
 	}
+
+   /// <summary>
+   /// OnFootstep
+   /// Play Footstep sound
+   /// </summary>
+   public void OnFootstep()
+   {
+      //if (!isLocalPlayer)
+      //   Debug.Log(string.Format("Footstep Sound Played (m_ForwardAmt: {0}", m_ForwardAmount));
+      // Only play the footstep sound if we are actually moving..
+      float speed = m_Animator.GetFloat("Forward");
+      if (Mathf.Abs(speed) > 0.01f)
+      {
+         //float origVolume = m_FootstepSound.volume;
+         //float adjustment = Mathf.Min(Mathf.Abs(speed) * 2.0f, 1.0f);
+         //m_FootstepSound.volume = origVolume * adjustment;
+         //if (!isLocalPlayer)
+         //   Debug.Log(string.Format("Foostep Sound Adjustment Orig: {0} Scale: {1} Final: {2}", origVolume, adjustment, m_FootstepSound.volume));
+         m_FootstepSound.Play();
+      }
+   }
+
 }

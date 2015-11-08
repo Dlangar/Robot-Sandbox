@@ -114,7 +114,21 @@ ModelImporter:
             tangentMode: 0
           preInfinity: 1
           postInfinity: 1
-      events: []
+      events:
+      - time: .509485126
+        functionName: OnFootstep
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: .0108401095
+        functionName: OnFootstep
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       transformMask:
       - path: 
         weight: 1

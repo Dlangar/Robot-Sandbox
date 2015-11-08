@@ -30,6 +30,7 @@ GameObject:
   - 54: {fileID: 5440642}
   - 114: {fileID: 11470250}
   - 114: {fileID: 11428662}
+  - 81: {fileID: 8113574}
   m_Layer: 0
   m_Name: LtMechCamera
   m_TagString: Untagged
@@ -139,6 +140,13 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!81 &8113574
+AudioListener:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 179406}
+  m_Enabled: 1
 --- !u!81 &8124550
 AudioListener:
   m_ObjectHideFlags: 1
