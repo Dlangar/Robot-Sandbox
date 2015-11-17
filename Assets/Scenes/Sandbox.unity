@@ -85,7 +85,7 @@ NavMeshSettings:
     cellSize: .166666672
     manualCellSize: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &398596415
+--- !u!1001 &201957943
 Prefab:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -94,15 +94,15 @@ Prefab:
     m_Modifications:
     - target: {fileID: 463358, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
       propertyPath: m_LocalPosition.x
-      value: -26.1633472
+      value: -29.4664764
       objectReference: {fileID: 0}
     - target: {fileID: 463358, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
       propertyPath: m_LocalPosition.y
-      value: 8.94069672e-07
+      value: 1.78813934e-07
       objectReference: {fileID: 0}
     - target: {fileID: 463358, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
       propertyPath: m_LocalPosition.z
-      value: -19.3381271
+      value: -14.8102913
       objectReference: {fileID: 0}
     - target: {fileID: 463358, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
       propertyPath: m_LocalRotation.x
@@ -122,11 +122,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 463358, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
       propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 160050, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}
-      propertyPath: m_Name
-      value: Mech1 (1)
+      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: cf092ff1390b33b4dafe4ee6fe795452, type: 2}

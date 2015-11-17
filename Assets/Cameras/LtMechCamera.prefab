@@ -168,7 +168,7 @@ MonoBehaviour:
   m_AutoTargetPlayer: 0
   m_UpdateType: 0
   m_RotateObj: {fileID: 0}
-  m_MoveSpeed: 4
+  m_MoveSpeed: 10
   m_TurnSpeed: 4
   m_FollowTilt: 1
   m_SpinTurnLimit: 360

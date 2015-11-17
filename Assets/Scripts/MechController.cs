@@ -14,14 +14,16 @@ public class MechController : NetworkBehaviour
 {
 
 	[SerializeField] float m_MovingTurnSpeed = 360;
-	[SerializeField] float m_StationaryTurnSpeed = 180;
-   [SerializeField]
-   float m_ForwardAccel = 1;
+	[SerializeField] float m_StationaryTurnSpeed = 0;
+   [SerializeField] float m_ForwardAccel = 1;
+
 	[SerializeField] float m_JumpPower = 12f;
 	[Range(1f, 4f)][SerializeField] float m_GravityMultiplier = 2f;
 	[SerializeField] float m_RunCycleLegOffset = 0.2f; //specific to the character in sample assets, will need to be modified to work with others
-	[SerializeField] float m_MoveSpeedMultiplier = 1f;
+   
+   [SerializeField] float m_MoveSpeedMultiplier = 1f;
 	[SerializeField] float m_AnimSpeedMultiplier = 1f;
+
 	[SerializeField] float m_GroundCheckDistance = 0.1f;
 
    [Header("Turret Control")]
@@ -38,6 +40,7 @@ public class MechController : NetworkBehaviour
 	Animator m_Animator;
    AudioSource m_EngineSound;
    AudioSource m_FootstepSound;
+   AudioSource m_TurretSound;
 
    // Turret Rotation
    Vector3 m_TurretTargetAngles;
@@ -46,7 +49,6 @@ public class MechController : NetworkBehaviour
    float m_TurretYaw;
    float m_TurretPitch;
    Quaternion m_TurretOriginalRotation;
-
 
    float m_ForwardAmount;
    float m_TurnAmount;
@@ -67,14 +69,12 @@ public class MechController : NetworkBehaviour
 		m_Animator = GetComponent<Animator>();
 		m_Rigidbody = GetComponent<Rigidbody>();
 		m_Capsule = GetComponent<CapsuleCollider>();
-      AudioSource[] audioList = GetComponents<AudioSource>();
-      if (audioList != null && audioList.Length == 2)
-      {
-         m_EngineSound = audioList[0];
-         m_FootstepSound = audioList[1];
-      }
 
-		m_CapsuleHeight = m_Capsule.height;
+      m_EngineSound = gameObject.transform.FindChild("EngineAudio").gameObject.GetComponent<AudioSource>();
+      m_FootstepSound = gameObject.transform.FindChild("FootstepAudio").gameObject.GetComponent<AudioSource>();
+      m_TurretSound = gameObject.transform.FindChild("TurretAudio").gameObject.GetComponent<AudioSource>();
+
+      m_CapsuleHeight = m_Capsule.height;
 		m_CapsuleCenter = m_Capsule.center;
 
 		m_Rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
@@ -93,7 +93,15 @@ public class MechController : NetworkBehaviour
    {
       // Update the Engine Sound based on our object's velocity
       float speed = m_Animator.GetFloat("Forward");
-      m_EngineSound.pitch = Mathf.Max(0.05f, Mathf.Abs(speed));
+      m_EngineSound.pitch = Mathf.Max(0.15f, Mathf.Abs(speed));
+
+      // And the turret rotation amounds to update the turret sound
+      float turret_x = m_Animator.GetFloat("TurretPitch");
+      float turret_y = m_Animator.GetFloat("TurretYaw");
+      float turretRotAmt = new Vector2(turret_x, turret_y).magnitude;
+      //m_TurretSound.pitch = Mathf.Lerp(m_TurretSound.pitch, turretRotAmt, Time.deltaTime);
+      m_TurretSound.pitch = Mathf.Clamp(turretRotAmt, 0.0f, 1.0f);
+
    }
 
    /// <summary>
@@ -141,13 +149,16 @@ public class MechController : NetworkBehaviour
    /// <param name="turretYaw">-1 to 1 value indicating desired turret rotation about the Y axis</param>
    /// <param name="turretPitch">-1 to 1 value indicating desired turret rotation about the X axis</param>
    /// <param name="jump"></param>
-   public void Move(Vector3 move, float turretYaw, float turretPitch, bool jump)
+   public void Move(Vector3 move, float thrust, float turretYaw, float turretPitch, bool jump)
 	{
 		// convert the world relative moveInput vector into a local-relative
 		// turn amount and forward amount required to head in the desired
 		// direction.
 		if (move.magnitude > 1f)
          move.Normalize();
+
+      if (Mathf.Abs(thrust) < 0.15f)
+         thrust = 0.0f;
 
       // Convert move into local space
 		move = transform.InverseTransformDirection(move);
@@ -165,7 +176,8 @@ public class MechController : NetworkBehaviour
          m_TurnAmount = Mathf.Atan2(move.x, move.z);
       }
 
-      m_ForwardAmount = Mathf.Lerp(m_ForwardAmount, move.z, (Time.deltaTime * m_ForwardAccel));
+      //m_ForwardAmount = Mathf.Lerp(m_ForwardAmount, thrust, (Time.deltaTime * m_ForwardAccel));
+      m_ForwardAmount = thrust;
 
 		// control and velocity handling is different when grounded and airborne:
 		if (m_IsGrounded)
@@ -306,19 +318,8 @@ public class MechController : NetworkBehaviour
       // NOTE - Always get the speed from the animator component, not the local m_ForwardSpeed, as that value
       // won't be set on network clients.
       float speed = m_Animator.GetFloat("Forward");
-      if (Mathf.Abs(speed) > 0.01f)
+      if (Mathf.Abs(speed) > 0.02f)
       {
-         // Get the distance from the camera to the  object. If we're within the minimum distance specified in the 
-         // Audio Source, this is now a 2d sound. Attenuate the volume of the footstep by the velocity of the animation, so
-         // very slow footsteps are soft, and hard foosteps are loud. Outside the min distance of the audio source, simply
-         // let the distance attenuation control the volume (ie., don't change it)
-         float distToCamera = (transform.position - Camera.main.transform.position).magnitude;
-         Debug.Log(string.Format("distToCamera: {0}", distToCamera));
-         if (distToCamera < (m_FootstepSound.minDistance + 4.0f))
-         {
-            m_FootstepSound.volume = Mathf.Min(Mathf.Abs(speed) * 2.0f, 1.0f);
-            Debug.Log(string.Format("Adjusting Volume: {0}", m_FootstepSound.volume));
-         }
          m_FootstepSound.Play();
       }
    }
