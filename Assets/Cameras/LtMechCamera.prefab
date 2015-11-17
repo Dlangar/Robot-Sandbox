@@ -30,7 +30,6 @@ GameObject:
   - 54: {fileID: 5440642}
   - 114: {fileID: 11470250}
   - 114: {fileID: 11428662}
-  - 81: {fileID: 8113574}
   m_Layer: 0
   m_Name: LtMechCamera
   m_TagString: Untagged
@@ -59,8 +58,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 139754}
-  m_LocalRotation: {x: .155299276, y: 3.46944695e-18, z: 1.85131146e-08, w: .987867534}
-  m_LocalPosition: {x: 0, y: 2.00000024, z: -7}
+  m_LocalRotation: {x: .0299865101, y: 0, z: 0, w: .999550343}
+  m_LocalPosition: {x: 0, y: 1.35000002, z: -9.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 473352}
@@ -85,7 +84,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 189538}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.47000003, z: 0}
+  m_LocalPosition: {x: 0, y: 3.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 456406}
@@ -140,13 +139,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!81 &8113574
-AudioListener:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 179406}
-  m_Enabled: 1
 --- !u!81 &8124550
 AudioListener:
   m_ObjectHideFlags: 1
@@ -175,13 +167,11 @@ MonoBehaviour:
   m_Target: {fileID: 0}
   m_AutoTargetPlayer: 0
   m_UpdateType: 0
-  m_MoveSpeed: 3
-  m_TurnSpeed: 3
-  m_RollSpeed: .200000003
-  m_FollowVelocity: 1
+  m_RotateObj: {fileID: 0}
+  m_MoveSpeed: 4
+  m_TurnSpeed: 4
   m_FollowTilt: 1
-  m_SpinTurnLimit: 90
-  m_TargetVelocityLowerLimit: 4
+  m_SpinTurnLimit: 360
   m_SmoothTurnTime: .200000003
 --- !u!114 &11470250
 MonoBehaviour:

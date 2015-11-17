@@ -967,7 +967,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 160050}
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -15.4390469, y: 6.55651093e-07, z: -9.78239536}
+  m_LocalPosition: {x: -1.31776047, y: 5.96046448e-08, z: -30.1342754}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 444634}
@@ -1426,8 +1426,15 @@ MonoBehaviour:
   m_GravityMultiplier: 2
   m_RunCycleLegOffset: .200000003
   m_MoveSpeedMultiplier: 7
-  m_AnimSpeedMultiplier: 1
+  m_AnimSpeedMultiplier: 1.20000005
   m_GroundCheckDistance: .100000001
+  EnableTurretControl: 1
+  AutoCentering: 0
+  TurretObj: {fileID: 105672}
+  TurretRotationRange: {x: 20, y: 70}
+  TurretRotationSpeed: 4
+  TurretDampingTime: .200000003
+  TurretRecenteringTime: 1
 --- !u!114 &11433256
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1440,7 +1447,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Animator: {fileID: 9575428}
-  m_ParameterSendBits: 1
+  m_ParameterSendBits: 223
   param0: 
   param1: 
   param2: 

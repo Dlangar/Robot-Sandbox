@@ -12,6 +12,7 @@ using UnityStandardAssets.Cameras;
 [RequireComponent(typeof(Animator))]
 public class MechController : NetworkBehaviour
 {
+
 	[SerializeField] float m_MovingTurnSpeed = 360;
 	[SerializeField] float m_StationaryTurnSpeed = 180;
    [SerializeField]
@@ -23,25 +24,42 @@ public class MechController : NetworkBehaviour
 	[SerializeField] float m_AnimSpeedMultiplier = 1f;
 	[SerializeField] float m_GroundCheckDistance = 0.1f;
 
-	Rigidbody m_Rigidbody;
+   [Header("Turret Control")]
+   public bool EnableTurretControl = true;
+   public bool AutoCentering = false;
+   public GameObject TurretObj;
+   public Vector2 TurretRotationRange = new Vector3(70, 70);
+   public float TurretRotationSpeed = 10;
+   public float TurretDampingTime = 0.2f;
+   public float TurretRecenteringTime = 0.5f;
+   [Space(10)]
+
+   Rigidbody m_Rigidbody;
 	Animator m_Animator;
    AudioSource m_EngineSound;
    AudioSource m_FootstepSound;
 
-   [SyncVar]
+   // Turret Rotation
+   Vector3 m_TurretTargetAngles;
+   Vector3 m_TurretFollowAngles;
+   Vector3 m_TurretFollowVelocity;
+   float m_TurretYaw;
+   float m_TurretPitch;
+   Quaternion m_TurretOriginalRotation;
+
+
    float m_ForwardAmount;
+   float m_TurnAmount;
 
    bool m_IsGrounded;
 	float m_OrigGroundCheckDistance;
 	const float k_Half = 0.5f;
-	float m_TurnAmount;
 	Vector3 m_GroundNormal;
 	float m_CapsuleHeight;
 	Vector3 m_CapsuleCenter;
 	CapsuleCollider m_Capsule;
-	bool m_Crouching;
-   Vector3 m_CurrentMove;
    float m_AnimWalkSpeed;
+   Vector3 m_CurrentMove;
 
 
 	void Start()
@@ -61,7 +79,10 @@ public class MechController : NetworkBehaviour
 
 		m_Rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
 		m_OrigGroundCheckDistance = m_GroundCheckDistance;
-	}
+
+      m_TurretOriginalRotation = TurretObj.transform.localRotation;
+
+   }
 
    /// <summary>
    /// Update
@@ -71,9 +92,19 @@ public class MechController : NetworkBehaviour
    void Update()
    {
       // Update the Engine Sound based on our object's velocity
-      Vector3 localVel = m_Rigidbody.velocity;
       float speed = m_Animator.GetFloat("Forward");
       m_EngineSound.pitch = Mathf.Max(0.05f, Mathf.Abs(speed));
+   }
+
+   /// <summary>
+   /// FixedUpdate
+   /// Gather the turret rotation parameters from the  animator, and rotate the turret
+   /// </summary>
+   void FixedUpdate()
+   {
+      float turretYaw = m_Animator.GetFloat("TurretYaw");
+      float turretPitch = m_Animator.GetFloat("TurretPitch");
+      HandleTurretRotation(turretYaw, turretPitch);
    }
 
    public override void OnStartLocalPlayer()
@@ -87,6 +118,11 @@ public class MechController : NetworkBehaviour
          return;
       }
 
+      // Set the Camera Obj's rotater to our turret, and the 
+      // target object to our object..
+      //if (TurretObj != null)
+      //   mechCam.SetRotateObj(TurretObj.transform);
+      mechCam.SetRotateObj(gameObject.transform);
       mechCam.SetTarget(gameObject.transform);
 
    }
@@ -101,12 +137,12 @@ public class MechController : NetworkBehaviour
    /// gets called on the local client. So EVERYTHING in this function
    /// happens ONLY on the local client.
    /// </summary>
-   /// <param name="move"></param>
-   /// <param name="crouch"></param>
+   /// <param name="move">World-space vector indicating the direction the mech would like to move</param>
+   /// <param name="turretYaw">-1 to 1 value indicating desired turret rotation about the Y axis</param>
+   /// <param name="turretPitch">-1 to 1 value indicating desired turret rotation about the X axis</param>
    /// <param name="jump"></param>
-   public void Move(Vector3 move, bool crouch, bool jump)
+   public void Move(Vector3 move, float turretYaw, float turretPitch, bool jump)
 	{
-
 		// convert the world relative moveInput vector into a local-relative
 		// turn amount and forward amount required to head in the desired
 		// direction.
@@ -118,84 +154,44 @@ public class MechController : NetworkBehaviour
 		CheckGroundStatus();
 
 		move = Vector3.ProjectOnPlane(move, m_GroundNormal);
-      //m_ForwardAmount = move.z;
-      // Cut max speed in half if we're walking backwards
+      m_CurrentMove = move;
+
       if (move.z < 0.0f)
       {
-         move *= 0.5f;
          m_TurnAmount = Mathf.Atan2(move.x, -move.z);
       }
       else
+      {
          m_TurnAmount = Mathf.Atan2(move.x, move.z);
-      m_ForwardAmount = Mathf.Lerp(m_ForwardAmount, move.z, (Time.deltaTime * m_ForwardAccel));
+      }
 
-		//ApplyExtraTurnRotation();
+      m_ForwardAmount = Mathf.Lerp(m_ForwardAmount, move.z, (Time.deltaTime * m_ForwardAccel));
 
 		// control and velocity handling is different when grounded and airborne:
 		if (m_IsGrounded)
 		{
-			HandleGroundedMovement(crouch, jump);
+			HandleGroundedMovement(jump);
 		}
 		else
 		{
 			HandleAirborneMovement();
 		}
 
-		ScaleCapsuleForCrouching(crouch);
-		PreventStandingInLowHeadroom();
-
 		// send input and other state parameters to the animator
-		UpdateAnimator(move);
+		UpdateAnimator(move, turretYaw, turretPitch);
 
 	}
 
 
-	void ScaleCapsuleForCrouching(bool crouch)
-	{
-		if (m_IsGrounded && crouch)
-		{
-			if (m_Crouching) return;
-			m_Capsule.height = m_Capsule.height / 2f;
-			m_Capsule.center = m_Capsule.center / 2f;
-			m_Crouching = true;
-		}
-		else
-		{
-			Ray crouchRay = new Ray(m_Rigidbody.position + Vector3.up * m_Capsule.radius * k_Half, Vector3.up);
-			float crouchRayLength = m_CapsuleHeight - m_Capsule.radius * k_Half;
-			if (Physics.SphereCast(crouchRay, m_Capsule.radius * k_Half, crouchRayLength))
-			{
-				m_Crouching = true;
-				return;
-			}
-			m_Capsule.height = m_CapsuleHeight;
-			m_Capsule.center = m_CapsuleCenter;
-			m_Crouching = false;
-		}
-	}
-
-	void PreventStandingInLowHeadroom()
-	{
-		// prevent standing up in crouch-only zones
-		if (!m_Crouching)
-		{
-			Ray crouchRay = new Ray(m_Rigidbody.position + Vector3.up * m_Capsule.radius * k_Half, Vector3.up);
-			float crouchRayLength = m_CapsuleHeight - m_Capsule.radius * k_Half;
-			if (Physics.SphereCast(crouchRay, m_Capsule.radius * k_Half, crouchRayLength))
-			{
-				m_Crouching = true;
-			}
-		}
-	}
-
-
-	void UpdateAnimator(Vector3 move)
+	void UpdateAnimator(Vector3 move, float turretYaw, float turretPitch)
 	{
 		// update the animator parameters
 		m_Animator.SetFloat("Forward", m_ForwardAmount, 0.1f, Time.deltaTime);
 		m_Animator.SetFloat("Turn", m_TurnAmount, 0.1f, Time.deltaTime);
-		m_Animator.SetBool("Crouch", m_Crouching);
-		m_Animator.SetBool("OnGround", m_IsGrounded);
+      m_Animator.SetFloat("TurretYaw", turretYaw, 0.1f, Time.deltaTime);
+      m_Animator.SetFloat("TurretPitch", turretPitch, 0.1f, Time.deltaTime);
+
+      m_Animator.SetBool("OnGround", m_IsGrounded);
 		if (!m_IsGrounded)
 		{
 			m_Animator.SetFloat("Jump", m_Rigidbody.velocity.y);
@@ -224,7 +220,6 @@ public class MechController : NetworkBehaviour
 			// don't use that while airborne
 			m_Animator.speed = 1;
 		}
-        m_CurrentMove = move;
 	}
 
 
@@ -238,10 +233,10 @@ public class MechController : NetworkBehaviour
 	}
 
 
-	void HandleGroundedMovement(bool crouch, bool jump)
+	void HandleGroundedMovement(bool jump)
 	{
 		// check whether conditions are right to allow a jump:
-		if (jump && !crouch && m_Animator.GetCurrentAnimatorStateInfo(0).IsName("Grounded"))
+		if (jump && m_Animator.GetCurrentAnimatorStateInfo(0).IsName("Grounded"))
 		{
 			// jump!
 			m_Rigidbody.velocity = new Vector3(m_Rigidbody.velocity.x, m_JumpPower, m_Rigidbody.velocity.z);
@@ -249,13 +244,6 @@ public class MechController : NetworkBehaviour
 			m_Animator.applyRootMotion = false;
 			m_GroundCheckDistance = 0.1f;
 		}
-	}
-
-	void ApplyExtraTurnRotation()
-	{
-      // help the character turn faster (this is in addition to root rotation in the animation)
-      float turnSpeed = Mathf.Lerp(m_StationaryTurnSpeed, m_MovingTurnSpeed, m_ForwardAmount);
-		transform.Rotate(0, m_TurnAmount * turnSpeed * Time.deltaTime, 0);
 	}
 
 
@@ -270,13 +258,12 @@ public class MechController : NetworkBehaviour
       {
          if (m_IsGrounded && Time.deltaTime > 0)
          {
-            m_AnimWalkSpeed = m_Animator.GetFloat("WalkSpeed");
-
             // Rotate
-            float turnSpeed = Mathf.Lerp(m_StationaryTurnSpeed, m_MovingTurnSpeed, m_AnimWalkSpeed);
+            float turnSpeed = Mathf.Lerp(m_StationaryTurnSpeed, m_MovingTurnSpeed, Mathf.Abs(m_ForwardAmount));
             transform.Rotate(0, m_TurnAmount * turnSpeed * Time.deltaTime, 0);
 
             // Move
+            m_AnimWalkSpeed = m_Animator.GetFloat("WalkSpeed");
             float forwardAmount = m_AnimWalkSpeed * (m_MoveSpeedMultiplier * Mathf.Sign(m_ForwardAmount));
             m_Rigidbody.velocity = transform.forward * forwardAmount;
          }
@@ -309,23 +296,97 @@ public class MechController : NetworkBehaviour
 
    /// <summary>
    /// OnFootstep
-   /// Play Footstep sound
+   /// Attenuate the footstep volume, and
+   /// play the footstep sound
    /// </summary>
    public void OnFootstep()
    {
-      //if (!isLocalPlayer)
-      //   Debug.Log(string.Format("Footstep Sound Played (m_ForwardAmt: {0}", m_ForwardAmount));
-      // Only play the footstep sound if we are actually moving..
+      // The Footstep animation pretty much always fires this event, even when we're blended to 
+      // mostly idle, so only fire this  event if we're actually moving.
+      // NOTE - Always get the speed from the animator component, not the local m_ForwardSpeed, as that value
+      // won't be set on network clients.
       float speed = m_Animator.GetFloat("Forward");
       if (Mathf.Abs(speed) > 0.01f)
       {
-         //float origVolume = m_FootstepSound.volume;
-         //float adjustment = Mathf.Min(Mathf.Abs(speed) * 2.0f, 1.0f);
-         //m_FootstepSound.volume = origVolume * adjustment;
-         //if (!isLocalPlayer)
-         //   Debug.Log(string.Format("Foostep Sound Adjustment Orig: {0} Scale: {1} Final: {2}", origVolume, adjustment, m_FootstepSound.volume));
+         // Get the distance from the camera to the  object. If we're within the minimum distance specified in the 
+         // Audio Source, this is now a 2d sound. Attenuate the volume of the footstep by the velocity of the animation, so
+         // very slow footsteps are soft, and hard foosteps are loud. Outside the min distance of the audio source, simply
+         // let the distance attenuation control the volume (ie., don't change it)
+         float distToCamera = (transform.position - Camera.main.transform.position).magnitude;
+         Debug.Log(string.Format("distToCamera: {0}", distToCamera));
+         if (distToCamera < (m_FootstepSound.minDistance + 4.0f))
+         {
+            m_FootstepSound.volume = Mathf.Min(Mathf.Abs(speed) * 2.0f, 1.0f);
+            Debug.Log(string.Format("Adjusting Volume: {0}", m_FootstepSound.volume));
+         }
          m_FootstepSound.Play();
       }
    }
+
+   void HandleTurretRotation(float desiredTurretYaw, float desiredTurretPitch)
+   {
+      // If we have not defined a TurretObj, don't bother..
+      if (!EnableTurretControl || TurretObj == null)
+         return;
+
+      
+
+      // we make initial calculations from the original local rotation
+      TurretObj.transform.localRotation = m_TurretOriginalRotation;
+
+      //m_TurretYaw = Mathf.Lerp(m_TurretYaw, desiredTurretYaw, 1.1f * Time.deltaTime);
+      //m_TurretPitch = Mathf.Lerp(m_TurretPitch, desiredTurretPitch, 1.1f * Time.deltaTime);
+      m_TurretYaw = desiredTurretYaw;
+      m_TurretPitch = desiredTurretPitch;
+
+      // with mouse input, we have direct control with no springback required.
+      float dampTime = 0.1f;
+      if (Mathf.Abs(m_TurretPitch) < 0.1f && Mathf.Abs(m_TurretYaw) < 0.1f && AutoCentering)
+      {
+         m_TurretTargetAngles.y = -m_TurretFollowAngles.y;
+         m_TurretTargetAngles.x = -m_TurretFollowAngles.x;
+         dampTime = TurretRecenteringTime;
+      }
+      else
+      {
+         m_TurretTargetAngles.y += m_TurretYaw * TurretRotationSpeed;
+         m_TurretTargetAngles.x += m_TurretPitch * TurretRotationSpeed;
+
+         // clamp values to allowed range
+         m_TurretTargetAngles.y = Mathf.Clamp(m_TurretTargetAngles.y, -TurretRotationRange.y * 0.5f, TurretRotationRange.y * 0.5f);
+         m_TurretTargetAngles.x = Mathf.Clamp(m_TurretTargetAngles.x, -TurretRotationRange.x * 0.5f, TurretRotationRange.x * 0.5f);
+         dampTime = TurretDampingTime;
+      }
+
+      // wrap values to avoid springing quickly the wrong way from positive to negative
+      if (m_TurretTargetAngles.y > 180)
+      {
+         m_TurretTargetAngles.y -= 360;
+         m_TurretFollowAngles.y -= 360;
+      }
+      if (m_TurretTargetAngles.x > 180)
+      {
+         m_TurretTargetAngles.x -= 360;
+         m_TurretFollowAngles.x -= 360;
+      }
+      if (m_TurretTargetAngles.y < -180)
+      {
+         m_TurretTargetAngles.y += 360;
+         m_TurretFollowAngles.y += 360;
+      }
+      if (m_TurretTargetAngles.x < -180)
+      {
+         m_TurretTargetAngles.x += 360;
+         m_TurretFollowAngles.x += 360;
+      }
+
+      // smoothly interpolate current values to target angles
+      m_TurretFollowAngles = Vector3.SmoothDamp(m_TurretFollowAngles, m_TurretTargetAngles, ref m_TurretFollowVelocity, dampTime);
+
+      // update the actual gameobject's rotation
+      TurretObj.transform.localRotation = m_TurretOriginalRotation * Quaternion.Euler(-m_TurretFollowAngles.x, m_TurretFollowAngles.y, 0);
+
+   }
+
 
 }
