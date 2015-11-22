@@ -10,9 +10,11 @@ using UnityStandardAssets.CrossPlatformInput;
 /// </summary>
 
 [RequireComponent(typeof (MechController))]
+[RequireComponent(typeof (Mech))]
 public class MechUserControl : NetworkBehaviour
 {
-   private MechController m_Character; // A reference to the ThirdPersonCharacter on the object
+   private MechController m_MechController;  // A reference to the MechControllerObject
+   private Mech m_Mech;                      // reference to the mech component. It handles fire control, and other special abilities
    private Transform m_Cam;                  // A reference to the main camera in the scenes transform
    private Vector3 m_CamForward;             // The current forward direction of the camera
    private Vector3 m_Move;
@@ -43,7 +45,8 @@ public class MechUserControl : NetworkBehaviour
       }
 
       // get the third person character ( this should never be null due to require component )
-      m_Character = GetComponent<MechController>();
+      m_MechController = GetComponent<MechController>();
+      m_Mech = GetComponent<Mech>();
    }
 
 
@@ -56,6 +59,16 @@ public class MechUserControl : NetworkBehaviour
       {
          m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
       }
+      // We'll need to clean this up more later
+      if (CrossPlatformInputManager.GetButtonDown("Fire1"))
+      {
+         m_Mech.CmdCommenceFire(0);
+      }
+      if (CrossPlatformInputManager.GetButtonDown("Fire2"))
+      {
+         m_Mech.CmdCommenceFire(1);
+      }
+
    }
 
 
@@ -87,7 +100,7 @@ public class MechUserControl : NetworkBehaviour
       }
 
       // pass all parameters to the character control script
-      m_Character.Move(m_Move, thrust, turret_yaw, turret_pitch, m_Jump);
+      m_MechController.Move(m_Move, thrust, turret_yaw, turret_pitch, m_Jump);
       m_Jump = false;
    }
 

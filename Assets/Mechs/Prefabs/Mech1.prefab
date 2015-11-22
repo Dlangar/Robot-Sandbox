@@ -501,6 +501,7 @@ GameObject:
   serializedVersion: 4
   m_Component:
   - 4: {fileID: 490156}
+  - 95: {fileID: 9574548}
   m_Layer: 0
   m_Name: Mount_Weapon_R
   m_TagString: Untagged
@@ -1037,7 +1038,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 160050}
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -29.4664764, y: 1.78813934e-07, z: -14.8102913}
+  m_LocalPosition: {x: -13.8283033, y: 4.76837158e-07, z: -8.89838982}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 444634}
@@ -1530,6 +1531,23 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
+--- !u!95 &9574548
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 182238}
+  m_Enabled: 0
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 74b0fab509a65ed4b94d9ce06bf94d86, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
 --- !u!95 &9575428
 Animator:
   serializedVersion: 3
@@ -1556,7 +1574,7 @@ Animator:
   m_GameObject: {fileID: 158076}
   m_Enabled: 0
   m_Avatar: {fileID: 9000000, guid: 34a2a4e50766ff145a37b7bd8006bee5, type: 3}
-  m_Controller: {fileID: 9100000, guid: ee016167b7cc12742bc2166d20510d34, type: 2}
+  m_Controller: {fileID: 9100000, guid: 74b0fab509a65ed4b94d9ce06bf94d86, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 1
