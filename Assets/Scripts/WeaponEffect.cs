@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// WeaponEffect
@@ -16,35 +17,21 @@ public class WeaponEffect : MonoBehaviour
       Inactive,
       Active,
       Expiring,
-      Dead
    }
 
-   [SerializeField]
-   protected Animator EffectAnimation;
-   [SerializeField]
-   protected Light EffectLight;
-   [SerializeField]
-   protected GameObject EffectMesh;
-   [SerializeField]
-   protected AudioSource EffectAudio;
-   [SerializeField]
-   protected ParticleSystem EffectParticles;
-
-   public float Duration;        // Duration off effect in seconds. A duration of 0 means effect must be de-activated, or is de-activated on destroy time
-   public float ExpireDelay;     // Provides a delay amount (in seconds) after the effect has been de-activated, for updates to still occur. This is so particles can finish, etc.
+   public float Lifespan;        // Overall lifespan of event. If event has 0 as a lifespan, then it must be manually deactivated.
    public bool ActivateOnStart;  // If true, object will auto-activate when it becomes available
 
-   float AccumTime;              // Accumulated Time, used for various phases
    Phase CurrentPhase;
+   EffectActivator[] EffectsList;
 
    public virtual void Awake()
    {
-
+      EffectsList = GetComponentsInChildren<EffectActivator>(true);
    }
 
    public virtual void Start()
    {
-      AccumTime = 0.0f;
       CurrentPhase = Phase.Inactive;
       if (ActivateOnStart)
          Activate();
@@ -52,91 +39,28 @@ public class WeaponEffect : MonoBehaviour
 
    public virtual void Update()
    {
-      switch (CurrentPhase)
-      {
-         case Phase.Inactive:
-         case Phase.Dead:
-            return;
-         case Phase.Active:
-         {
-            if (Duration > 0.0f)
-            {
-               AccumTime += Time.deltaTime;
-               if (AccumTime >= Duration)
-               {
-                  Deactivate();
-               }
-            }
-            break;
-         }
-         case Phase.Expiring:
-         {
-            AccumTime += Time.deltaTime;
-            if (AccumTime >= ExpireDelay)
-               Expire();
-            break;
-         }
-      }
    }
 
    public virtual void Activate()
    {
-      // Reset the timer
-      AccumTime = 0.0f;
-
-      // Enable the Animation
-      if (EffectAnimation != null)
-         EffectAnimation.enabled = true;
-      // Play the Sound
-      if (EffectAudio != null)
-         EffectAudio.Play();
-      // Activate the Light
-      if (EffectLight != null)
-         EffectLight.enabled = true;
-      // Particles
-      if (EffectParticles != null)
-         EffectParticles.enableEmission = true;
-
-      // And activate the object..
-      EffectMesh.SetActive(true);
-
       CurrentPhase = Phase.Active;
-
+      foreach (EffectActivator effect in EffectsList)
+      {
+         effect.Activate();
+      }
+      if (Lifespan != 0.0f)
+         Invoke("Deactivate", Lifespan);
    }
 
    public virtual void Deactivate()
    {
-      EffectMesh.SetActive(false);
-
-      // Turn off everything except particles
-      if (EffectAnimation != null)
-         EffectAnimation.enabled = false;
-      if (EffectAudio != null && Duration == 0.0f)
-         EffectAudio.Stop();
-      if (EffectLight != null)
-         EffectLight.enabled = false;
-
-
-      // Particles
-      if (ExpireDelay == 0.0f)
+      CurrentPhase = Phase.Inactive;
+      foreach (EffectActivator effect in EffectsList)
       {
-         if (EffectParticles != null)
-            EffectParticles.enableEmission = false;
-         CurrentPhase = Phase.Dead;
+         // Any Effects that are still active will be stopped
+         if (effect.IsActive)
+            effect.StopEffect();       
       }
-      else
-      {
-         AccumTime = 0.0f;
-         CurrentPhase = Phase.Expiring;
-      }
-
-   }
-
-   public void Expire()
-   {
-      if (EffectParticles != null)
-         EffectParticles.enableEmission = false;
-      CurrentPhase = Phase.Dead;
    }
 
 }

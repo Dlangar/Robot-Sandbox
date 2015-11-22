@@ -22,6 +22,9 @@ public class Weapon : MonoBehaviour
    [SerializeField]
    GameObject ImpactEffectPrefab;
 
+   float FiringTime = 0.0f;
+   float CooldownTime = 0.0f;
+   float TimeSinceLastHitCheck = 0.0f;
 
 	// Use this for initialization
 	void Start ()
@@ -32,41 +35,87 @@ public class Weapon : MonoBehaviour
       // Note - not every weapon has to have an animator. Up to use code to check for null
       Animator = GetComponent<Animator>();
 
-      CurrentState = WeaponState.Ready;
-
+      // Reset the Weapon
+      ResetWeapon();
 	
 	}
+
+   // Resets Weapon State,
+   // Resets all timers.
+   public void ResetWeapon()
+   {
+      CurrentState = WeaponState.Ready;
+      FiringTime = 0.0f;
+      TimeSinceLastHitCheck = 0.0f;
+      CooldownTime = 0.0f;
+   }
 	
 	// Update is called once per frame
 	void Update ()
    {
 	   if (CurrentState == WeaponState.Firing)
       {
-         // TODO - Use fire rates, and verify that 
-
-         // Then stop firing
-         if (Proto.FireType == ProtoWeapon.FireMethod.Trigger)
-            CeaseFire();
+         FiringTime += Time.deltaTime;
+         switch (Proto.FireType)
+         {
+            case ProtoWeapon.FireMethod.Trigger:
+               PerformHitCheck();
+               CeaseFire();
+               break;
+            case ProtoWeapon.FireMethod.Chain:
+               TimeSinceLastHitCheck += Time.deltaTime;
+               if (TimeSinceLastHitCheck >= Proto.ChainDamageRate)
+               { 
+                  PerformHitCheck();
+                  TimeSinceLastHitCheck = 0.0f;
+               }
+               break;
+            case ProtoWeapon.FireMethod.Lock:
+               // DLMTODO Handle Missile Lock 
+               break;
+         }
+      }
+      if (CurrentState == WeaponState.OnCooldown)
+      {
+         CooldownTime += Time.deltaTime;
+         if (CooldownTime >= Proto.Cooldown)
+            ResetWeapon();
       }
 	}
 
-   public void CommenceFire()
+   /// <summary>
+   /// In the case of Instant hit types, this does the raycast and determines if we hit. In the case
+   /// of projectile types, this launches the projectile
+   /// </summary>
+   /// <returns></returns>
+   public bool PerformHitCheck()
    {
-
-      if (CurrentState == WeaponState.Firing || CurrentState == WeaponState.OnCooldown)
-         return;
-
-      CurrentState = WeaponState.Firing;
-
+      return false;
    }
 
-   public void CeaseFire()
+   /// <summary>
+   /// Begins the Firing Process.
+   /// </summary>
+   /// <returns>true if we successfully started firing. False if not</returns>
+   public bool CommenceFire()
+   {
+      if (CurrentState == WeaponState.Firing || CurrentState == WeaponState.OnCooldown)
+         return false;
+
+      FiringTime = 0.0f;
+      TimeSinceLastHitCheck = Proto.ChainDamageRate;
+      CurrentState = WeaponState.Firing;
+      return true;
+   }
+
+   public bool CeaseFire()
    {
       if (CurrentState != WeaponState.Firing)
-         return;
+         return false;
 
       // TODO Begin Cooldown Timer, put weapon on cooldown
-      CurrentState = WeaponState.Ready;      
+      CurrentState = WeaponState.OnCooldown;
+      return true;
       
    }
 

@@ -68,11 +68,11 @@ public class Mech : NetworkBehaviour
          Debug.LogError(string.Format("No Weapon was found for Index: {0}", weaponIdx));
          return;
       }
-      Weapons[weaponIdx].CommenceFire();
-
-      // Tell the Client to Commence Fire Effects
-      RpcActivateFireEffect(weaponIdx);
-
+      if (Weapons[weaponIdx].CommenceFire())
+      {
+         // Tell the Client to Commence Fire Effects
+         RpcActivateFireEffect(weaponIdx);
+      }
    }
 
 
