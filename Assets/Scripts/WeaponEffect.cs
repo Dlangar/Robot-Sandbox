@@ -21,6 +21,7 @@ public class WeaponEffect : MonoBehaviour
 
    public float Lifespan;        // Overall lifespan of event. If event has 0 as a lifespan, then it must be manually deactivated.
    public bool ActivateOnStart;  // If true, object will auto-activate when it becomes available
+   public bool DestroyOnDeactivate;  // If true, this object will destroy itself when it is deactivated.
 
    Phase CurrentPhase;
    EffectActivator[] EffectsList;
@@ -60,7 +61,10 @@ public class WeaponEffect : MonoBehaviour
          // Any Effects that are still active will be stopped
          if (effect.IsActive)
             effect.StopEffect();       
-      }
+      };
+
+      if (DestroyOnDeactivate)
+         Destroy(gameObject);
    }
 
 }

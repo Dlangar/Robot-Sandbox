@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿// #define DEBUG_PROJECTILE
+
+using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 
@@ -8,7 +10,7 @@ public class WeaponProjectile: NetworkBehaviour
    public float Speed = 300.0f;
    public LayerMask CollisionLayer;
    public WeaponEffect FlightEffect;
-   public WeaponEffect ImpactEffect;
+   public GameObject ImpactEffectPrefab;
    public float DespawnDelay = 0.0f;
    public float LookAheadDist = 2.0f;
 
@@ -45,8 +47,9 @@ public class WeaponProjectile: NetworkBehaviour
    /// <param name="weaponIdx"></param>
    public void Launch(Mech ownerMech, int weaponIdx, Vector3 position, Quaternion rotation)
    {
-      Debug.Log(string.Format("Projectile from Weapon: {0} has launched!", WeaponIndex));
-
+      #if DEBUG_PROJECTILE
+         Debug.Log(string.Format("Projectile from Weapon: {0} has launched!", WeaponIndex));
+      #endif
       Owner = ownerMech;
       WeaponIndex = weaponIdx;
       OwnerWeapon = Owner.GetWeapon(WeaponIndex);
@@ -80,7 +83,6 @@ public class WeaponProjectile: NetworkBehaviour
    /// </summary>
 	void Update ()
    {
-      Debug.Log(string.Format("Update on Projectile from Weapon: {0} isServer: {1} Launched: {2}", WeaponIndex, isServer, Launched));
       if (!isServer)
          return;
 
@@ -89,11 +91,16 @@ public class WeaponProjectile: NetworkBehaviour
 
       if (IsHit)
       {
-         Debug.Log(string.Format("Projectile from Weapon: {0} has hit something.", WeaponIndex));
+         #if DEBUG_PROJECTILE
+            Debug.Log(string.Format("Projectile from Weapon: {0} has hit something.", WeaponIndex));
+         #endif
+
          // Tell the Parent Weapon we hit something - but only once
          if (!PayloadDelivered)
          {
-            Debug.Log(string.Format("Projectile from Weapon: {0} has delivered its payload.", WeaponIndex));
+#if DEBUG_PROJECTILE
+               Debug.Log(string.Format("Projectile from Weapon: {0} has delivered its payload.", WeaponIndex));
+#endif
             PayloadDelivered = true;
          }
 
@@ -111,6 +118,9 @@ public class WeaponProjectile: NetworkBehaviour
          // Raycast for targets with ray length based on frame step by ray cast advance multiplier
          if (Physics.Raycast(transform.position, transform.forward, out HitPoint, step.magnitude * LookAheadDist, CollisionLayer))
          {
+            // Tell the client to perform Impact..
+            RpcActivateImpactEffect(HitPoint.point, HitPoint.normal);
+
             IsHit = true;
             DespawnTimer = 0.0f;
             return;
@@ -121,7 +131,9 @@ public class WeaponProjectile: NetworkBehaviour
          DistTraveled += step.magnitude;
          if (DistTraveled >= OwnerWeapon.Proto.Range)
          {
-            Debug.Log(string.Format("Projectile from Weapon: {0} has reached maximum range.", WeaponIndex));
+            #if DEBUG_PROJECTILE
+               Debug.Log(string.Format("Projectile from Weapon: {0} has reached maximum range.", WeaponIndex));
+            #endif
             // We haven't actually delivered a payload, but as far as the projectile is concerned, it's donw
             PayloadDelivered = true;
             IsHit = true;
@@ -140,8 +152,17 @@ public class WeaponProjectile: NetworkBehaviour
       }
 
       // Destroy us!
-      Debug.Log(string.Format("Attempting to destroy projectile from weapon: {0}", WeaponIndex));
       NetworkServer.Destroy(this.gameObject);
+   }
+
+   [ClientRpc]
+   void RpcActivateImpactEffect(Vector3 location, Vector3 normal)
+   {
+      if (ImpactEffectPrefab != null)
+      {
+         // DLMTODO - We might need to adjust orientation of effects that have a direction, like bullet effects in the dirt. 
+         Instantiate(ImpactEffectPrefab, location, Quaternion.LookRotation(normal));
+      }
    }
 
 

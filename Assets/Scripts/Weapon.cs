@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿// #define DEBUG_WEAPON
+
+using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(ProtoWeapon))]
@@ -112,7 +114,9 @@ public class Weapon : MonoBehaviour
    {
       if (Proto.HitType == ProtoWeapon.HitMethod.Projectile)
       {
-         Debug.Log(string.Format("Launching projectile for weapon: {0}", WeaponIndex));
+         #if DEBUG_WEAPON
+            Debug.Log(string.Format("Launching projectile for weapon: {0}", WeaponIndex));
+         #endif
          Owner.LaunchWeaponProjectile(WeaponIndex);
       }
       // DLMTODO - Handle Instant Raycast
@@ -147,14 +151,14 @@ public class Weapon : MonoBehaviour
 
    public void ActivateFireEffect()
    {
-      Debug.Log("Activating Fire Effect on Client..");
       if (FireEffect != null)
          FireEffect.Activate();
    }
 
    void DeactivateFireEffect()
    {
-      FireEffect.Deactivate();
+      if (FireEffect != null)
+         FireEffect.Deactivate();
    }
 
 }

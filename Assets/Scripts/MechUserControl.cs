@@ -55,16 +55,19 @@ public class MechUserControl : NetworkBehaviour
       if (!isLocalPlayer)
          return;
 
+      float Fire1 = CrossPlatformInputManager.GetAxis("Fire1");
+      float Fire2 = CrossPlatformInputManager.GetAxis("Fire2");
+
       if (!m_Jump)
       {
          m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
       }
       // We'll need to clean this up more later
-      if (CrossPlatformInputManager.GetButtonDown("Fire1"))
+      if (CrossPlatformInputManager.GetButtonDown("Fire1") || Fire1 > 0.0f)
       {
          m_Mech.CmdCommenceFire(0);
       }
-      if (CrossPlatformInputManager.GetButtonDown("Fire2"))
+      if (CrossPlatformInputManager.GetButtonDown("Fire2") || Fire2 > 0.0f)
       {
          m_Mech.CmdCommenceFire(1);
       }
