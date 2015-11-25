@@ -38,6 +38,11 @@ public class Mech : NetworkBehaviour
       {
          Debug.LogWarning("Found more or less than 2 weapons on mech.");
       }
+
+      // Assign Each Weapon a unique Index to facility communications between
+      // the Mech and its weapons
+      for (int weapIdx = 0; weapIdx < Weapons.Length; weapIdx++)
+         Weapons[weapIdx].WeaponIndex = weapIdx;
    }
    // Use this for initialization
    void Start ()
@@ -90,5 +95,29 @@ public class Mech : NetworkBehaviour
 
    }
 
+   /// <summary>
+   /// Returns the requested Weapon associated with the mech
+   /// </summary>
+   /// <param name="weaponidx"></param>
+   /// <returns></returns>
+   public Weapon GetWeapon(int weaponIdx)
+   {
+      return Weapons[weaponIdx];
+   }
+
+   /// <summary>
+   /// Because this is a network function, (it spawns network projectiles)
+   /// it needs to live here, on the Network-aware Mech. 
+   /// </summary>
+   /// <param name="weaponIdx"></param>
+   public void LaunchWeaponProjectile(int weaponIdx)
+   {
+      Weapon weapon = Weapons[weaponIdx];
+
+      // Instantiate the Projectile and send it on its merry way
+      GameObject projectileObj = (GameObject) Instantiate(weapon.ProjectilePrefab);
+      projectileObj.GetComponent<WeaponProjectile>().Launch(this, weaponIdx, weapon.FireEffect.transform.position, weapon.FireEffect.transform.rotation);
+      NetworkServer.Spawn(projectileObj);
+   }
 
 }

@@ -11,20 +11,36 @@ public class Weapon : MonoBehaviour
       OnCooldown
    }
 
-   ProtoWeapon Proto;
+   [HideInInspector]
+   public ProtoWeapon Proto;
    Animator Animator;
 
    WeaponState CurrentState;
 
    // Our Effects
-   [SerializeField]
-   WeaponEffect FireEffect;
-   [SerializeField]
-   GameObject ImpactEffectPrefab;
+   public WeaponEffect FireEffect;
+   public GameObject ImpactEffectPrefab;
+   public GameObject ProjectilePrefab;
 
-   float FiringTime = 0.0f;
-   float CooldownTime = 0.0f;
-   float TimeSinceLastHitCheck = 0.0f;
+   /// <summary>
+   /// The Owning Mech. The weapon assumes the mech component is at the root of it's hierarchy,
+   /// and will look for this component there
+   /// </summary>
+   [HideInInspector]
+   public Mech Owner;
+
+   /// <summary>
+   ///  This is a unique index given to this weapon
+   ///  At runtime, to facilitate in communiation btween the weapon
+   ///  and its owner
+   /// </summary>
+   [HideInInspector]
+   public int WeaponIndex;
+
+
+   float FiringTimer = 0.0f;
+   float CooldownTimer = 0.0f;
+   float LastHitCheckTimer = 0.0f;
 
 	// Use this for initialization
 	void Start ()
@@ -34,6 +50,10 @@ public class Weapon : MonoBehaviour
 
       // Note - not every weapon has to have an animator. Up to use code to check for null
       Animator = GetComponent<Animator>();
+
+      Owner = transform.root.gameObject.GetComponent<Mech>();
+      if (Owner == null)
+         Debug.LogWarning("Weapon attached to a nonmech item. No owner, so it won't attribute damage correctly.");
 
       // Reset the Weapon
       ResetWeapon();
@@ -45,9 +65,9 @@ public class Weapon : MonoBehaviour
    public void ResetWeapon()
    {
       CurrentState = WeaponState.Ready;
-      FiringTime = 0.0f;
-      TimeSinceLastHitCheck = 0.0f;
-      CooldownTime = 0.0f;
+      FiringTimer = 0.0f;
+      LastHitCheckTimer = 0.0f;
+      CooldownTimer = 0.0f;
    }
 	
 	// Update is called once per frame
@@ -55,7 +75,7 @@ public class Weapon : MonoBehaviour
    {
 	   if (CurrentState == WeaponState.Firing)
       {
-         FiringTime += Time.deltaTime;
+         FiringTimer += Time.deltaTime;
          switch (Proto.FireType)
          {
             case ProtoWeapon.FireMethod.Trigger:
@@ -63,11 +83,11 @@ public class Weapon : MonoBehaviour
                CeaseFire();
                break;
             case ProtoWeapon.FireMethod.Chain:
-               TimeSinceLastHitCheck += Time.deltaTime;
-               if (TimeSinceLastHitCheck >= Proto.ChainDamageRate)
+               LastHitCheckTimer += Time.deltaTime;
+               if (LastHitCheckTimer >= Proto.ChainDamageRate)
                { 
                   PerformHitCheck();
-                  TimeSinceLastHitCheck = 0.0f;
+                  LastHitCheckTimer = 0.0f;
                }
                break;
             case ProtoWeapon.FireMethod.Lock:
@@ -77,8 +97,8 @@ public class Weapon : MonoBehaviour
       }
       if (CurrentState == WeaponState.OnCooldown)
       {
-         CooldownTime += Time.deltaTime;
-         if (CooldownTime >= Proto.Cooldown)
+         CooldownTimer += Time.deltaTime;
+         if (CooldownTimer >= Proto.Cooldown)
             ResetWeapon();
       }
 	}
@@ -90,6 +110,12 @@ public class Weapon : MonoBehaviour
    /// <returns></returns>
    public bool PerformHitCheck()
    {
+      if (Proto.HitType == ProtoWeapon.HitMethod.Projectile)
+      {
+         Debug.Log(string.Format("Launching projectile for weapon: {0}", WeaponIndex));
+         Owner.LaunchWeaponProjectile(WeaponIndex);
+      }
+      // DLMTODO - Handle Instant Raycast
       return false;
    }
 
@@ -102,8 +128,8 @@ public class Weapon : MonoBehaviour
       if (CurrentState == WeaponState.Firing || CurrentState == WeaponState.OnCooldown)
          return false;
 
-      FiringTime = 0.0f;
-      TimeSinceLastHitCheck = Proto.ChainDamageRate;
+      FiringTimer = 0.0f;
+      LastHitCheckTimer = Proto.ChainDamageRate;
       CurrentState = WeaponState.Firing;
       return true;
    }
@@ -117,12 +143,6 @@ public class Weapon : MonoBehaviour
       CurrentState = WeaponState.OnCooldown;
       return true;
       
-   }
-
-   // DLM TODO - See if we hit something
-   void DoHitCheck()
-   {
-
    }
 
    public void ActivateFireEffect()
