@@ -567,9 +567,9 @@ MonoBehaviour:
   ChainDamageRate: 0
   SplashDamage: 0
   SplashRadius: 0
-  HeatGeneration: 0
-  HeadDamage: 0
-  Cooldown: 1
+  HeatGeneration: .25
+  HeatDamage: 2
+  Cooldown: .800000012
 --- !u!114 &11459092
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -583,6 +583,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Lifespan: 1
   ActivateOnStart: 0
+  DestroyOnDeactivate: 0
 --- !u!114 &11463122
 MonoBehaviour:
   m_ObjectHideFlags: 1

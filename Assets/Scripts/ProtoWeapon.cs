@@ -39,6 +39,6 @@ public class ProtoWeapon : MonoBehaviour
    public float SplashDamage;       // If weapon does AOE damage at poi, how much it does. This is in addition to Primary Damage
    public float SplashRadius;       // If weapon does AOE damage, the radius at which it looks for targets
    public float HeatGeneration;     // Heat generated on the firing unit each time the weapon fires
-   public float HeadDamage;         // Heat delivered to target at poi (if any)
+   public float HeatDamage;         // Heat delivered to target at poi (if any)
    public float Cooldown;           // Time (in seconds) before weapon can be used again when it is fired.
 }

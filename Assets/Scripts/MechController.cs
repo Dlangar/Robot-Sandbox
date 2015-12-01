@@ -1,3 +1,5 @@
+#define DEBUG_MECHCONTROLLER
+
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityStandardAssets.Cameras;
@@ -193,6 +195,26 @@ public class MechController : NetworkBehaviour
 		UpdateAnimator(move, turretYaw, turretPitch);
 
 	}
+
+   /// <summary>
+   /// FallForward
+   /// There's no real reason the mech object itself can't play animations, but I want to keep
+   /// all animation control routed through the MechController, which already handles movement animations.
+   /// In that way, it knows about the current state of the animator at all times
+   /// </summary>
+   public void FallForward()
+   {
+
+      NetworkAnimator networkAnimator = GetComponent<NetworkAnimator>();
+      if (networkAnimator != null)
+      {
+#if DEBUG_MECHCONTROLLER
+         Debug.Log("Triggering Death Animation on Server!");
+#endif
+         //networkAnimator.SetTrigger("FallForward");
+         m_Animator.SetTrigger("FallForward");
+      }
+   }
 
 
 	void UpdateAnimator(Vector3 move, float turretYaw, float turretPitch)

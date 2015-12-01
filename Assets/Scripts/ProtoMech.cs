@@ -16,6 +16,6 @@ public class ProtoMech : MonoBehaviour
    public float MaxTurn;
    public float MaxTurrentAngle;
    public float MaxHeat;
-   public float CoolingRate;
+   public float CoolingRate;     // Units of Heat/Second the mech cools for
 	
 }

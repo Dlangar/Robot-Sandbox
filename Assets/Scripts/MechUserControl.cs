@@ -55,6 +55,9 @@ public class MechUserControl : NetworkBehaviour
       if (!isLocalPlayer)
          return;
 
+      if (m_Mech.CurrentState != Mech.MechState.Alive)
+         return;
+
       float Fire1 = CrossPlatformInputManager.GetAxis("Fire1");
       float Fire2 = CrossPlatformInputManager.GetAxis("Fire2");
 
@@ -79,6 +82,9 @@ public class MechUserControl : NetworkBehaviour
    private void FixedUpdate()
    {
       if (!isLocalPlayer)
+         return;
+
+      if (m_Mech.CurrentState != Mech.MechState.Alive)
          return;
 
       // read inputs

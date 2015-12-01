@@ -98,9 +98,10 @@ public class WeaponProjectile: NetworkBehaviour
          // Tell the Parent Weapon we hit something - but only once
          if (!PayloadDelivered)
          {
-#if DEBUG_PROJECTILE
+            Owner.DeliverWeaponPayload(WeaponIndex, HitPoint.transform.gameObject);
+            #if DEBUG_PROJECTILE
                Debug.Log(string.Format("Projectile from Weapon: {0} has delivered its payload.", WeaponIndex));
-#endif
+            #endif
             PayloadDelivered = true;
          }
 

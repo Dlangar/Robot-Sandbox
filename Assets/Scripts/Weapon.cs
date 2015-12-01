@@ -89,6 +89,7 @@ public class Weapon : MonoBehaviour
                if (LastHitCheckTimer >= Proto.ChainDamageRate)
                { 
                   PerformHitCheck();
+                  Owner.ApplyHeat(Proto.HeatGeneration);
                   LastHitCheckTimer = 0.0f;
                }
                break;
@@ -132,6 +133,7 @@ public class Weapon : MonoBehaviour
       if (CurrentState == WeaponState.Firing || CurrentState == WeaponState.OnCooldown)
          return false;
 
+      Owner.ApplyHeat(Proto.HeatGeneration);
       FiringTimer = 0.0f;
       LastHitCheckTimer = Proto.ChainDamageRate;
       CurrentState = WeaponState.Firing;
